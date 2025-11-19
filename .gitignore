@@ -1,0 +1,9 @@
+node_modules/
+__pycache__/
+.vscode/
+.env
+.env.local
+.env.*.local
+.DS_Store
+contracts/
+mytoken-hardhat/
