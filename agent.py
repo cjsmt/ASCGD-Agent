@@ -1,13 +1,10 @@
 import os
 import streamlit as st
-# from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate
 from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from tools.deploy_tool import deploy_solidity_contract
 from tools.read_write_file import write_file, read_file
-# from tools.generate_code import generate_solidity_code
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -28,9 +25,11 @@ def build_agent():
 
 smart_contract_agent = build_agent()
 
-def chat_with_model(user_prompt: str):
-    config = {"configurable": {"thread_id": "2"}}
-    # response = smart_contract_agent.invoke({"messages": [user_prompt]}, config=config)
+def chat_with_model(user_prompt: str, conversation_id=None):
+    # 使用对话ID作为线程ID，确保每个对话有独立记忆
+    thread_id = conversation_id if conversation_id else "default"
+    config = {"configurable": {"thread_id": thread_id}}
+    
     final_response = None
     for chunk in smart_contract_agent.stream({"messages": [user_prompt]}, config, stream_mode="values"):
         last_message = chunk["messages"][-1]

@@ -2,6 +2,7 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 from agent import chat_with_model
+import datetime
 
 load_dotenv(override=True)
 
@@ -20,6 +21,12 @@ if "processing" not in st.session_state:
 
 if "uploaded_files" not in st.session_state:
     st.session_state.uploaded_files = []
+
+if "conversations" not in st.session_state:
+    st.session_state.conversations = []
+
+if "current_conversation" not in st.session_state:
+    st.session_state.current_conversation = None
 
 # 现代化CSS样式 - 支持暗色模式和自适应宽度
 css_path = os.path.join(os.path.dirname(__file__), "static", "styles.css")
@@ -132,7 +139,7 @@ if st.session_state.processing:
     """, unsafe_allow_html=True)
 
 # 添加一些间距
-st.markdown("<div style='height: 150px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height: 180px;'></div>", unsafe_allow_html=True)
 
 # 输入区域 - 固定在底部
 input_container = st.container()
@@ -216,30 +223,39 @@ with input_container:
         file_names = []
         if st.session_state.uploaded_files:
             file_names = [f["name"] for f in st.session_state.uploaded_files]
-            file_paths = [f["file"].name for f in st.session_state.uploaded_files]
-            st.info(f"文件路径: {', '.join(file_paths)}")
             
             if message_content:
-                # 如果既有文本又有文件，创建一个组合消息
                 message_content += f"\n\n📎 上传的文件: {', '.join(file_names)}"
             else:
-                # 如果只有文件，创建一个文件分析请求
                 message_content = f"📎 请分析这些文件: {', '.join(file_names)}"
         
         if message_content:
-            # 只添加一条用户消息到历史
+            # 如果是新对话且没有保存过，创建新对话记录
+            if st.session_state.current_conversation is None and st.session_state.messages:
+                # 使用第一条用户消息作为标题
+                title = message_content[:30] + "..." if len(message_content) > 30 else message_content
+                new_conv = {
+                    "title": title,
+                    "messages": st.session_state.messages.copy() + [{"role": "user", "content": message_content}],
+                    "created_at": datetime.datetime.now().isoformat()
+                }
+                st.session_state.conversations.append(new_conv)
+                st.session_state.current_conversation = len(st.session_state.conversations) - 1
+            
+            # 添加用户消息到历史
             st.session_state.messages.append({
                 "role": "user", 
                 "content": message_content,
-                "files": st.session_state.uploaded_files.copy()  # 保存文件信息供后台使用
+                "files": st.session_state.uploaded_files.copy()
             })
+            
+            # 如果是已有对话，更新对话记录
+            if st.session_state.current_conversation is not None:
+                st.session_state.conversations[st.session_state.current_conversation]["messages"] = st.session_state.messages.copy()
+            
             st.session_state.first_load = False
             st.session_state.processing = True
-            
-            # 清空输入和文件
             st.session_state.uploaded_files = []
-            
-            # 立即重新运行以显示加载状态
             st.rerun()
 
 # 处理AI回复（在重新运行后执行）
@@ -273,29 +289,88 @@ if st.session_state.processing and st.session_state.messages:
     except Exception as e:
         error_message = f"❌ 处理时出现错误：{str(e)}"
         st.session_state.messages.append({"role": "assistant", "content": error_message})
+
+    # 添加助手消息到历史后，更新对话记录
+    if st.session_state.current_conversation is not None:
+        st.session_state.conversations[st.session_state.current_conversation]["messages"] = st.session_state.messages.copy()
     
     # 完成处理
     st.session_state.processing = False
     st.rerun()
 
-# 侧边栏控制
+# 侧边栏控制（替换原有的侧边栏内容）
 with st.sidebar:
-    st.header("⚙️ 设置")
+    st.header("⚙️ 对话")
     
-    if st.button("🗑️ 清空对话历史", use_container_width=True, disabled=st.session_state.processing):
+    # 新建对话按钮（位于顶部）
+    if st.button("＋ 新建对话", use_container_width=True, key="new_chat_btn", disabled=st.session_state.processing):
+        # 保存当前对话到会话列表（如果有内容）
+        if st.session_state.messages:
+            # 使用第一条用户消息作为对话标题
+            first_user_msg = next((msg for msg in st.session_state.messages if msg["role"] == "user"), None)
+            if first_user_msg:
+                title = first_user_msg["content"][:30] + "..." if len(first_user_msg["content"]) > 30 else first_user_msg["content"]
+            else:
+                title = f"对话 {len(st.session_state.conversations) + 1}"
+            
+            st.session_state.conversations.append({
+                "title": title,
+                "messages": st.session_state.messages.copy(),
+                "created_at": datetime.datetime.now().isoformat()
+            })
+        
+        # 清空当前对话，开启新会话
         st.session_state.messages = []
         st.session_state.uploaded_files = []
         st.session_state.first_load = True
+        st.session_state.current_conversation = None
         st.rerun()
-    
+
     st.markdown("---")
-    st.subheader("📁 支持的文件类型")
-    st.markdown("""
-    - `.sol` - Solidity 合约文件
-    - `.txt` - 文本文件
-    - `.json` - 配置文件
-    - `.md` - 文档文件
-    """)
+    st.subheader("历史对话")
+    
+    if not st.session_state.conversations:
+        st.info("暂无历史对话，点击「＋ 新建对话」或开始输入内容。")
+    else:
+        # 显示所有对话历史（最新的在最上面）
+        for idx, conv in enumerate(reversed(st.session_state.conversations)):
+            actual_idx = len(st.session_state.conversations) - 1 - idx
+            
+            cols = st.columns([3, 1])
+            with cols[0]:
+                # 显示对话标题和选中状态
+                is_current = st.session_state.current_conversation == actual_idx
+                btn_label = f"● {conv['title']}" if is_current else conv['title']
+                
+                if st.button(btn_label, key=f"conv_{actual_idx}", use_container_width=True, 
+                           disabled=st.session_state.processing):
+                    # 加载选中的对话
+                    st.session_state.messages = conv["messages"].copy()
+                    st.session_state.first_load = False
+                    st.session_state.current_conversation = actual_idx
+                    st.rerun()
+            
+            with cols[1]:
+                if st.button("🗑️", key=f"del_{actual_idx}", disabled=st.session_state.processing):
+                    # 删除对话
+                    st.session_state.conversations.pop(actual_idx)
+                    # 如果删除的是当前对话，清空当前消息
+                    if st.session_state.current_conversation == actual_idx:
+                        st.session_state.messages = []
+                        st.session_state.current_conversation = None
+                        st.session_state.first_load = True
+                    st.rerun()
+
+    st.markdown("---")
+    
+    # 全局清空按钮
+    if st.button("🧹 清空所有对话", use_container_width=True, disabled=st.session_state.processing):
+        st.session_state.messages = []
+        st.session_state.uploaded_files = []
+        st.session_state.first_load = True
+        st.session_state.conversations = []
+        st.session_state.current_conversation = None
+        st.rerun()
     
     st.markdown("---")
     st.subheader("💡 使用提示")
@@ -307,15 +382,3 @@ with st.sidebar:
     - 🚀 协助部署到区块链
     - ⚠️ 代码请务必审计后再部署
     """)
-    
-    # 显示对话统计
-    if st.session_state.messages:
-        user_count = len([m for m in st.session_state.messages if m["role"] == "user"])
-        assistant_count = len([m for m in st.session_state.messages if m["role"] == "assistant"])
-        file_count = len([m for m in st.session_state.messages if m.get("files")])
-        
-        st.markdown("---")
-        st.subheader("📊 对话统计")
-        st.write(f"用户消息: {user_count}")
-        st.write(f"包含文件的对话: {file_count}")
-        st.write(f"助手回复: {assistant_count}")
