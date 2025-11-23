@@ -1,64 +1,64 @@
 # ASCGD-Agent
 
-轻量级的 AI 驱动智能合约生成、分析与一键部署平台（基于 Streamlit + LangGraph/LangChain）。本仓库包含用于生成/读取/写入 Solidity 合约的工具以及将编译并部署合约到以太坊兼容节点的脚本。
+A lightweight AI-driven platform for generating, analyzing, and deploying smart contracts with a single click (based on Streamlit + LangGraph/LangChain). This repository contains tools for generating, reading, and writing Solidity contracts, as well as scripts for compiling and deploying contracts to Ethereum-compatible nodes.
 
-## 项目结构（核心文件/目录）
+## Project Structure (Core Files/Directories)
 
-- [app.py](app.py) — Streamlit Web UI 入口
-- [agent.py](agent.py) — Agent 构建与对外会话接口（[`agent.build_agent`](agent.py) / [`agent.chat_with_model`](agent.py)）
-- [test.py](test.py) — 本地快速部署示例（调用 [`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py)）
-- [requirements.txt](requirements.txt) — Python 依赖
-- [package.json](package.json) — 根目录 NPM 配置（依赖 OpenZeppelin）
+- [app.py](app.py) — Streamlit Web UI entry point
+- [agent.py](agent.py) — Agent construction and external session interface ([`agent.build_agent`](agent.py) / [`agent.chat_with_model`](agent.py))
+- [test.py](test.py) — Local quick deployment example (calls [`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py))
+- [requirements.txt](requirements.txt) — Python dependencies
+- [package.json](package.json) — Root directory NPM configuration (depends on OpenZeppelin)
 - [.gitignore](.gitignore)
-- [static/styles.css](static/styles.css) — Web UI 样式
-- [contracts/](contracts/) — Solidity 合约目录（此目录在 .gitignore 中被忽略，运行时会写入）
-- [hardhat/](hardhat/) — Hardhat 示例工程
+- [static/styles.css](static/styles.css) — Web UI styles
+- [contracts/](contracts/) — Solidity contract directory (this directory is ignored in .gitignore and will be written to at runtime)
+- [hardhat/](hardhat/) — Hardhat example project
 - tools/
-  - [tools/deploy_tool.py](tools/deploy_tool.py) — 编译并部署合约的主工具（[`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py)）
-  - [tools/read_write_file.py](tools/read_write_file.py) — 写入/读取 Solidity 文件工具（[`tools.read_write_file.write_file`](tools/read_write_file.py)，[`tools.read_write_file.read_file`](tools/read_write_file.py)）
+  - [tools/deploy_tool.py](tools/deploy_tool.py) — Main tool for compiling and deploying contracts ([`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py))
+  - [tools/read_write_file.py](tools/read_write_file.py) — Tool for writing/reading Solidity files ([`tools.read_write_file.write_file`](tools/read_write_file.py), [`tools.read_write_file.read_file`](tools/read_write_file.py))
+  - [tools/solidity_vulnerability_tool.py](tools/solidity_vulnerability_tool.py) — Tool for performing security checks on Solidity contracts ([`tools.solidity_vulnerability_tool.security_check_solidity`](tools/solidity_vulnerability_tool.py), [`tools.solidity_vulnerability_tool.analyze_with_slither`](tools/solidity_vulnerability_tool.py))
 
-## 快速开始
+## Quick Start
 
-1. 克隆仓库并进入目录（已在 workspace 中）
-2. 创建并激活 Python 虚拟环境（可选）
-3. 安装 Python 依赖：
+1. Clone the repository and navigate to the directory (already in workspace).
+2. Create and activate a Python virtual environment (optional).
+3. Install Python dependencies:
 
 ```sh
 pip install -r requirements.txt
 ```
 
-4. 安装并初始化node.js环境（仅展示MacOS系统，Windows系统这一步可自行GPT，要下载node版本为v22.x.x）
+4. Install and initialize the Node.js environment (only for MacOS, for Windows please refer to GPT for instructions, download Node version v22.x.x):
 
 ```sh
-# 1. 安装 nvm（如果你还没有安装）
+# 1. Install nvm (if you haven't installed it yet)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.6/install.sh | bash
-# 安装完成后，重启终端或执行：
+# After installation, restart the terminal or execute:
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# 2. 安装22版本的node
+# 2. Install Node version 20
 nvm install 20
 
-# 3. 使用这个版本
+# 3. Use this version
 nvm use 20
 
-# 4. 确认版本
+# 4. Confirm version
 node -v
 npm -v
 ```
 
-5. 进入 Hardhat 示例并安装依赖
+5. Navigate to the Hardhat example and install dependencies:
 
 ```sh
-# 1. 创建并进入项目目录
+# 1. Create and navigate to the project directory
 mkdir hardhat
 cd hardhat
 
-# 2. 初始化npm项目
+# 2. Initialize npm project
 npm init -y 
 
-
-# 3. 打开 package.json，在 {} 内添加 "type": "module"，示例：
+# 3. Open package.json and add "type": "module" within {}
 {
   "name": "mytoken-hardhat",
   "version": "1.0.0",
@@ -67,96 +67,100 @@ npm init -y
   "devDependencies": {}
 }
 
-# 4. 安装Hardhat
+# 4. Install Hardhat
 npm install --save-dev hardhat
 
-# 5. 初始化Hardhat项目
+# 5. Initialize Hardhat project
 npx hardhat --init
 
-# 6. 启动Hardhat节点
+# 6. Start Hardhat node
 npx hardhat node
 ```
 
-6. 配置环境变量
+6. Configure environment variables:
 
-- 使用 `.env` 文件设置第三方 LLM API key，例如 `DEEPSEEK_API_KEY`，项目通过 `dotenv` 自动加载：
-  - 在 [`agent.py`](agent.py) 中读取：`os.environ.get("DEEPSEEK_API_KEY")`
+- Use a `.env` file to set third-party LLM API keys, such as `DEEPSEEK_API_KEY`, which the project loads automatically via `dotenv`:
+  - Read in [`agent.py`](agent.py): `os.environ.get("DEEPSEEK_API_KEY")`
 
-7. 运行 Web UI（Streamlit）
+7. Run the Web UI (Streamlit):
 
 ```sh
 streamlit run app.py
 ```
 
-打开浏览器访问本地地址（Streamlit 会打印 URL），通过 UI 与智能合约助手交互、上传 `.sol` 文件或请求生成合约并一键部署。
+Open your browser to access the local address (Streamlit will print the URL) and interact with the smart contract assistant, upload `.sol` files, or request contract generation and deployment.
 
-## 本地快速部署示例
+## Local Quick Deployment Example
 
-仓库提供了 [test.py](test.py) 作为本地示例。它调用了工具函数：
+The repository provides [test.py](test.py) as a local example. It calls the tool function:
 
 - [`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py)
 
-示例运行：
+Example run:
 
 ```sh
-# 运行前，请先把tools/deploy_tool.py文件里125行的@tool给注释掉
+# Before running, please comment out the @tool on line 125 in tools/deploy_tool.py
 python test.py
 ```
 
-请确保：
+Please ensure:
 
-- 本地运行着以太坊兼容 RPC 节点（如 Hardhat、Anvil 或 Ganache）并将 `rpc_url` 指向正确地址；
-- 在 `test.py` 中使用的是测试私钥（示例私钥仅用于本地测试）。
+- A local Ethereum-compatible RPC node (such as Hardhat, Anvil, or Ganache) is running and `rpc_url` points to the correct address.
+- A test private key is used in `test.py` (the example private key is for local testing only).
 
-## 工具说明
+## Tool Descriptions
 
-- 合约读写
-  - [`tools.read_write_file.write_file`](tools/read_write_file.py)：将 LLM 返回或任意文本提取 Solidity 代码并写入 `contracts/{contract_name}.sol`。
-  - [`tools.read_write_file.read_file`](tools/read_write_file.py)：读取指定文件并尝试提取 Solidity 源码。
-- 编译与部署
-  - [`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py)：
-    - 自动收集本地相对 import 的源文件（`collect_sources`），使用 `py-solc-x` 安装/设置 solc，调用 `compile_standard` 编译，并通过 `web3` 将合约部署到指定 RPC。
-    - 支持根据合约内 `pragma solidity` 自动选取 solc 版本，若找不到会 fallback 到 `0.8.19`。
-    - 输出为 JSON 字符串，包含部署结果（`contractAddress`、`txHash`、`abi`、`receipt`）或错误信息。
+- Contract Read/Write
+  - [`tools.read_write_file.write_file`](tools/read_write_file.py): Writes Solidity code returned by LLM or any text to `contracts/{contract_name}.sol`.
+  - [`tools.read_write_file.read_file`](tools/read_write_file.py): Reads a specified file and attempts to extract Solidity source code.
+- Compilation and Deployment
+  - [`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py):
+    - Automatically collects locally relative import source files (`collect_sources`), installs/sets up solc using `py-solc-x`, calls `compile_standard` to compile, and deploys the contract to the specified RPC via `web3`.
+    - Supports automatic selection of solc version based on `pragma solidity` in the contract; if not found, it will fallback to `0.8.19`.
+    - Outputs a JSON string containing deployment results (`contractAddress`, `txHash`, `abi`, `receipt`) or error messages.
+- Security Analysis
+  - [`tools.solidity_vulnerability_tool.security_check_solidity`](tools/solidity_vulnerability_tool.py): Performs a basic security scan on Solidity contracts, checking for common vulnerabilities such as reentrancy, integer overflow, and access control issues.
+  - [`tools.solidity_vulnerability_tool.analyze_with_slither`](tools/solidity_vulnerability_tool.py): Runs Slither static analysis on the provided Solidity code, returning a detailed report of potential issues and recommendations.
 
-## 使用建议与注意事项
+## Usage Recommendations and Precautions
 
-- 安全性：不要在生产环境暴露或使用真实私钥。本项目示例私钥仅用于本地测试。
-- 依赖项：
-  - 需要安装 `solc`（二进制）或允许 `py-solc-x` 下载指定版本；
-- .gitignore: 默认忽略了 `contracts/` 和 `mytoken-hardhat/` 等以避免将生成文件提交到仓库。
-- UI 交互：[`app.py`](app.py) 将上传文件内容拼接后传给 Agent（[`agent.chat_with_model`](agent.py)），Agent 使用 [`tools.*` 工具] 做文件读写、编译部署或安全检测。
+- Security: Do not expose or use real private keys in production environments. The example private keys in this project are for local testing only.
+- Dependencies:
+  - `solc` (binary) must be installed or allow `py-solc-x` to download the specified version.
+- .gitignore: By default, `contracts/` and `mytoken-hardhat/` are ignored to prevent generated files from being committed to the repository.
+- UI Interaction: [`app.py`](app.py) concatenates the uploaded file content and passes it to the Agent ([`agent.chat_with_model`](agent.py)), which uses [`tools.*` tools] for file reading/writing, compilation, deployment, or security checks.
 
-## 常见命令
+## Common Commands
 
-- 运行 UI：
+- Run the UI:
 
 ```sh
 streamlit run app.py
 ```
 
-- 运行示例部署：
+- Run the example deployment:
 
 ```sh
 python test.py
 ```
 
-- 在 Hardhat 示例中运行测试（进入 mytoken-hardhat）：
+- Run tests in the Hardhat example (navigate to mytoken-hardhat):
 
 ```sh
 cd mytoken-hardhat
 npx hardhat test
 ```
 
-## 代码定位（快速参考）
+## Code Location (Quick Reference)
 
-- Agent 与会话：[`agent.py`](agent.py)（[`agent.build_agent`](agent.py), [`agent.chat_with_model`](agent.py)）
-- Web UI：[`app.py`](app.py)
-- 部署工具：[`tools/deploy_tool.py`](tools/deploy_tool.py)（[`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py)）
-- 读写工具：[`tools/read_write_file.py`](tools/read_write_file.py)（[`tools.read_write_file.write_file`](tools/read_write_file.py), 
-- 样式：[`static/styles.css`](static/styles.css)
+- Agent and Sessions: [`agent.py`](agent.py) ([`agent.build_agent`](agent.py), [`agent.chat_with_model`](agent.py))
+- Web UI: [`app.py`](app.py)
+- Deployment Tool: [`tools/deploy_tool.py`](tools/deploy_tool.py) ([`tools.deploy_tool.deploy_solidity_contract`](tools/deploy_tool.py))
+- Read/Write Tool: [`tools/read_write_file.py`](tools/read_write_file.py) ([`tools.read_write_file.write_file`](tools/read_write_file.py), [`tools.read_write_file.read_file`](tools/read_write_file.py))
+- Security Tool: [`tools/solidity_vulnerability_tool.py`](tools/solidity_vulnerability_tool.py) ([`tools.solidity_vulnerability_tool.security_check_solidity`](tools/solidity_vulnerability_tool.py), [`tools.solidity_vulnerability_tool.analyze_with_slither`](tools/solidity_vulnerability_tool.py))
+- Styles: [`static/styles.css`](static/styles.css)
 
-## 许可证 & 贡献
+## License & Contributions
 
-- 本仓库目前未指定许可证。若准备开源或共享，请补充 LICENSE 文件。
-- 欢迎提交 issue 或 PR 来改进部署流程、合约模板或安全检测逻辑。
+- This repository currently does not specify a license. If you plan to open source or share, please add a LICENSE file.
+- Contributions are welcome! Please submit issues or PRs to improve deployment processes, contract templates, or security detection logic.
