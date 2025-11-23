@@ -7,7 +7,7 @@ import datetime
 load_dotenv(override=True)
 
 st.set_page_config(page_title="SmartContract Security Pipeline", layout="wide")
-st.title("🤖 AI 智能合约生成 & 部署平台")
+st.title("🤖 AI Smart Contract Generation & Deployment Platform")
 
 # 初始化对话历史
 if "messages" not in st.session_state:
@@ -35,7 +35,7 @@ try:
         css = f.read()
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 except FileNotFoundError:
-    st.warning("样式文件未找到：static/styles.css。请确保已将样式文件放到该路径。")
+    st.warning("Stylesheet not found: static/styles.css. Please ensure the file exists at that path.")
 
 def get_message_width_class(content):
     """根据内容长度返回对应的宽度类别"""
@@ -54,7 +54,7 @@ def get_message_width_class(content):
         return "message-long"
 
 # 主界面
-st.header("💬 智能合约助手")
+st.header("💬 Smart Contract Assistant")
 
 # 显示对话历史
 chat_container = st.container()
@@ -62,22 +62,27 @@ chat_container = st.container()
 with chat_container:
     # 如果是首次加载，显示欢迎信息
     if st.session_state.first_load and not st.session_state.messages:
-        welcome_msg = """👋 你好！我是智能合约助手，我可以帮你：
+        welcome_msg = """👋 Hello! I'm your Smart Contract Assistant. I can help you with:
 
-• 📝 生成 Solidity 智能合约代码
-• 🔍 分析和检测合约安全漏洞  
-• ⚡ 优化合约逻辑和Gas消耗
-• 📚 解释合约功能和实现原理
-• 🚀 协助部署到区块链网络
-• 📄 分析上传的合约文件
+• 📝 Generate Solidity smart contract code (ERC20/ERC721 etc.)
 
-请告诉我你想要创建什么样的智能合约，或者上传合约文件让我分析！"""
+• 🔍 Analyze and detect security vulnerabilities
+
+• ⚡ Optimize contract logic and gas usage
+
+• 📚 Explain contract functionality and implementation details
+
+• 🚀 Assist with deployment to blockchain networks
+
+• 📄 Analyze uploaded contract files
+
+Tell me what kind of smart contract you'd like to create, or upload a .sol file for analysis!"""
         
         width_class = get_message_width_class(welcome_msg)
         
         st.markdown(
             f'<div class="assistant-message {width_class}">'
-            f'<div class="message-role">🤖 智能合约助手</div>'
+            f'<div class="message-role">🤖 Smart Contract Assistant</div>'
             f'<div class="message-content">{welcome_msg}</div>'
             f'</div>',
             unsafe_allow_html=True
@@ -92,10 +97,10 @@ with chat_container:
                 width_class = "message-short"
                 st.markdown(
                     f'<div class="user-message {width_class}">'
-                    f'<div class="message-role">📎 你上传了文件</div>'
+                    f'<div class="message-role">📎 You uploaded a file</div>'
                     f'<div class="message-content">'
-                    f'<strong>📄 {file_info.get("name", "文件")}</strong><br>'
-                    f'<small>大小: {file_info.get("size", "未知")}</small>'
+                    f'<strong>📄 {file_info.get("name", "file")}</strong><br>'
+                    f'<small>Size: {file_info.get("size", "unknown")}</small>'
                     f'</div>'
                     f'</div>',
                     unsafe_allow_html=True
@@ -104,7 +109,7 @@ with chat_container:
                 width_class = get_message_width_class(message["content"])
                 st.markdown(
                     f'<div class="user-message {width_class}">'
-                    f'<div class="message-role">👤 你</div>'
+                    f'<div class="message-role">👤 You</div>'
                     f'<div class="message-content">{message["content"]}</div>'
                     f'</div>',
                     unsafe_allow_html=True
@@ -122,7 +127,7 @@ with chat_container:
             
             st.markdown(
                 f'<div class="assistant-message {width_class}">'
-                f'<div class="message-role">🤖 智能合约助手</div>'
+                f'<div class="message-role">🤖 Smart Contract Assistant</div>'
                 f'<div class="message-content">{content}</div>'
                 f'</div>',
                 unsafe_allow_html=True
@@ -133,8 +138,8 @@ if st.session_state.processing:
     st.markdown("""
     <div class="loading-overlay">
         <div class="spinner"></div>
-        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">🤖 正在处理中</div>
-        <div style="font-size: 14px; opacity: 0.8;">请稍候...</div>
+        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">🤖 Processing</div>
+        <div style="font-size: 14px; opacity: 0.8;">Please wait...</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -154,7 +159,7 @@ with input_container:
     user_input = st.text_area(
         " ",
         height=80,
-        placeholder="💡 请输入你的智能合约需求，或者上传合约文件进行分析...\n例如：创建一个ERC20代币合约，或者上传.sol文件进行安全检测",
+        placeholder="💡 Describe your smart contract requirement or upload a contract file for analysis...\nE.g.: Create an ERC20 token, or upload a .sol file for security review",
         label_visibility="collapsed",
         key="user_input",
         disabled=st.session_state.processing
@@ -189,7 +194,7 @@ with input_container:
         _, _, send_col = st.columns([1, 1, 2])
         with send_col:
             send_clicked = st.button(
-                "🚀 发送",
+                "🚀 Send",
                 use_container_width=True,
                 type="primary",
                 disabled=st.session_state.processing or (not user_input.strip() and not st.session_state.uploaded_files),
@@ -225,9 +230,9 @@ with input_container:
             file_names = [f["name"] for f in st.session_state.uploaded_files]
             
             if message_content:
-                message_content += f"\n\n📎 上传的文件: {', '.join(file_names)}"
+                message_content += f"\n\n📎 Uploaded files: {', '.join(file_names)}"
             else:
-                message_content = f"📎 请分析这些文件: {', '.join(file_names)}"
+                message_content = f"📎 Please analyze these files: {', '.join(file_names)}"
         
         if message_content:
             # 如果是新对话且没有保存过，创建新对话记录
@@ -271,7 +276,7 @@ if st.session_state.processing and st.session_state.messages:
         # 如果有文件，将文件内容也传递给后台
         if "files" in last_user_message and last_user_message["files"]:
             # 这里可以添加文件内容读取逻辑
-            file_info_text = "\n\n上传的文件内容："
+            file_info_text = "\n\nUploaded file contents:"
             for file_info in last_user_message["files"]:
                 uploaded_file = file_info["file"]
                 # 读取文件内容
@@ -287,7 +292,7 @@ if st.session_state.processing and st.session_state.messages:
         st.session_state.messages.append({"role": "assistant", "content": assistant_response})
         
     except Exception as e:
-        error_message = f"❌ 处理时出现错误：{str(e)}"
+        error_message = f"❌ Error occurred during processing: {str(e)}"
         st.session_state.messages.append({"role": "assistant", "content": error_message})
 
     # 添加助手消息到历史后，更新对话记录
@@ -300,10 +305,10 @@ if st.session_state.processing and st.session_state.messages:
 
 # 侧边栏控制（替换原有的侧边栏内容）
 with st.sidebar:
-    st.header("⚙️ 对话")
+    st.header("⚙️ Conversations")
     
     # 新建对话按钮（位于顶部）
-    if st.button("＋ 新建对话", use_container_width=True, key="new_chat_btn", disabled=st.session_state.processing):
+    if st.button("+ New Chat", use_container_width=True, key="new_chat_btn", disabled=st.session_state.processing):
         # 保存当前对话到会话列表（如果有内容）
         if st.session_state.messages:
             # 使用第一条用户消息作为对话标题
@@ -327,10 +332,10 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    st.subheader("历史对话")
+    st.subheader("Conversation History")
     
     if not st.session_state.conversations:
-        st.info("暂无历史对话，点击「＋ 新建对话」或开始输入内容。")
+        st.info("No conversation history yet. Click '+ New Chat' or start typing.")
     else:
         # 显示所有对话历史（最新的在最上面）
         for idx, conv in enumerate(reversed(st.session_state.conversations)):
@@ -364,7 +369,7 @@ with st.sidebar:
     st.markdown("---")
     
     # 全局清空按钮
-    if st.button("🧹 清空所有对话", use_container_width=True, disabled=st.session_state.processing):
+    if st.button("🧹 Clear All Conversations", use_container_width=True, disabled=st.session_state.processing):
         st.session_state.messages = []
         st.session_state.uploaded_files = []
         st.session_state.first_load = True
@@ -373,12 +378,12 @@ with st.sidebar:
         st.rerun()
     
     st.markdown("---")
-    st.subheader("💡 使用提示")
+    st.subheader("💡 Tips")
     st.markdown("""
-    - 💬 用自然语言描述合约需求
-    - 📝 上传文件进行安全分析
-    - 🔧 生成特定标准合约
-    - ⚡ 优化Gas消耗
-    - 🚀 协助部署到区块链
-    - ⚠️ 代码请务必审计后再部署
+    - 💬 Describe your contract requirements in natural language
+    - 📝 Upload files for security analysis
+    - 🔧 Generate contracts following specific standards
+    - ⚡ Optimize gas usage
+    - 🚀 Help deploy to blockchain networks
+    - ⚠️ Always audit generated code before deploying
     """)

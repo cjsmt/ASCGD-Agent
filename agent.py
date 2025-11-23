@@ -5,21 +5,40 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from tools.deploy_tool import deploy_solidity_contract
 from tools.read_write_file import write_file, read_file
+from tools.solidity_vulnerability_tool import security_check_solidity, analyze_with_slither
+# from langchain_community.llms import Ollama
+# from langchain_experimental.llms.ollama_functions import OllamaFunctions
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
 DeepSeek_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 llm = init_chat_model("deepseek-chat", model_provider="deepseek")
+# llm = OllamaFunctions(model="llama3.2", base_url="http://localhost:11434")
 
 
 def build_agent():
-    system_prompt = "你是Solidity智能合约生成器，请根据用户需求生成符合ERC20/ERC721等标准的Solidity代码，你可以使用工具进行一键上链部署智能合约"
+    system_prompt = """You are a Solidity smart contract generation expert. Follow this workflow strictly:
 
-    tools = [deploy_solidity_contract, write_file, read_file]
-    # agent = create_tool_calling_agent(llm, tool, prompt)
+[Phase 1: Code Generation]
+1. Analyze the user's requirements and generate a complete Solidity smart contract.
+2. Explain the contract's functionality and features in detail.
+3. After presenting the code, proactively offer the following next steps:
+
+Choose a follow-up action:
+🔍 [Security Check] - Check the code for security vulnerabilities
+📊 [Deep Analysis] - Run static analysis via Slither
+💾 [Save File] - Save the code to a .sol file
+🚀 [Deploy Contract] - Deploy to a blockchain network
+➡️ [Continue Optimization] - Modify code based on feedback
+
+[Tool Usage Rules]
+- Only call the security tools when the user explicitly requests "security check" or similar.
+- Do not run security analysis automatically after generating code; ask the user first.
+- Ensure the final output language matches the user's input language."""
+
+    tools = [deploy_solidity_contract, write_file, read_file, security_check_solidity, analyze_with_slither]
     memory = MemorySaver()
-    # agent_executor = AgentExecutor(agent=agent, tools=tool, verbose=True)
     agent_executor = create_react_agent(llm, tools, checkpointer=memory, prompt=system_prompt)
     return agent_executor
 
